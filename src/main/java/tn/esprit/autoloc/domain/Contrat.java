@@ -38,7 +38,10 @@ public class Contrat {
     @Column(nullable = false)
     private boolean valide;
     @OneToOne(mappedBy = "contrat")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Reservation reservation;
-    @OneToMany(mappedBy = "contrat")
-    private List<Paiement> paiements;
+
+    @OneToMany(mappedBy = "contrat", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    @com.fasterxml.jackson.annotation.JsonManagedReference("contrat-paiements")
+    private List<Paiement> paiements = new java.util.ArrayList<>();
 }

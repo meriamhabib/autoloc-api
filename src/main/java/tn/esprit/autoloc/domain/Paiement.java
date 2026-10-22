@@ -38,6 +38,7 @@ public class Paiement {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ModePaiement modePaiement;
-    @ManyToOne
+    @ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)
+    @com.fasterxml.jackson.annotation.JsonBackReference("contrat-paiements")
     private Contrat contrat;
 }

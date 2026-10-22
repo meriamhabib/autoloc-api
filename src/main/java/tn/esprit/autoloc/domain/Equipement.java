@@ -28,5 +28,6 @@ public class Equipement {
     @Column(nullable = false, length = 100)
     private String libelle;
     @ManyToMany(mappedBy = "equipements")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private List<Vehicule> vehicules;
 }
