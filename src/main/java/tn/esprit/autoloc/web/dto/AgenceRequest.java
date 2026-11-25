@@ -6,10 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * DTO de saisie pour la création et la modification d'une agence.
- * Contient les contraintes de validation Bean Validation.
- */
 @Getter
 @Setter
 @NoArgsConstructor

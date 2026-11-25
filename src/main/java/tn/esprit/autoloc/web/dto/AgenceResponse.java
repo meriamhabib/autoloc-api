@@ -5,10 +5,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * DTO de réponse exposant les données d'une agence.
- * Ne contient pas les listes d'employés ni de véhicules pour éviter la surcharge.
- */
 @Getter
 @Setter
 @NoArgsConstructor

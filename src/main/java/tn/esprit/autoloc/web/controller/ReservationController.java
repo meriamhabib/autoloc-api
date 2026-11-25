@@ -16,11 +16,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import tn.esprit.autoloc.service.IReservationService;
 import tn.esprit.autoloc.web.dto.ReservationRequest;
 import tn.esprit.autoloc.web.dto.ReservationResponse;
+import tn.esprit.autoloc.web.dto.ReservationResponseDTO;
+import tn.esprit.autoloc.web.dto.ReservationWithContratRequestDTO;
 
 @Tag(name = "Réservations", description = "Gestion des réservations de véhicules")
 @RestController
@@ -80,5 +83,32 @@ public class ReservationController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteById(@Parameter(description = "Identifiant de la réservation") @PathVariable Long id) {
         reservationService.deleteById(id);
+    }
+
+    @Operation(summary = "Affecter une réservation à un client par nom et prénom")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Réservation affectée au client avec succès"),
+            @ApiResponse(responseCode = "400", description = "Paramètres invalides"),
+            @ApiResponse(responseCode = "404", description = "Réservation ou client introuvable")
+    })
+    @PutMapping("/{idReservation}/affecter-client")
+    public ReservationResponseDTO affecterReservationAClient(
+            @Parameter(description = "Identifiant de la réservation") @PathVariable Long idReservation,
+            @Parameter(description = "Nom du client") @RequestParam String nom,
+            @Parameter(description = "Prénom du client") @RequestParam String prenom) {
+        return reservationService.affecterReservationAClient(idReservation, nom, prenom);
+    }
+
+    @Operation(summary = "Créer une réservation et son contrat associé en une seule opération")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Réservation et contrat créés avec succès"),
+            @ApiResponse(responseCode = "400", description = "Données invalides"),
+            @ApiResponse(responseCode = "404", description = "Véhicule ou client introuvable")
+    })
+    @PostMapping("/avec-contrat")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ReservationResponseDTO creerReservationEtContratAssocie(
+            @Valid @RequestBody ReservationWithContratRequestDTO requestDTO) {
+        return reservationService.creerReservationEtContratAssocie(requestDTO);
     }
 }

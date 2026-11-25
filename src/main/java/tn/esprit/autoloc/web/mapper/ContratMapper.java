@@ -4,10 +4,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 import tn.esprit.autoloc.domain.Contrat;
 import tn.esprit.autoloc.domain.Paiement;
+import tn.esprit.autoloc.web.dto.ContratDTO;
 import tn.esprit.autoloc.web.dto.ContratRequest;
 import tn.esprit.autoloc.web.dto.ContratResponse;
 import tn.esprit.autoloc.web.dto.PaiementRequest;
 import tn.esprit.autoloc.web.dto.PaiementResponse;
+import tn.esprit.autoloc.web.dto.ReservationWithContratRequestDTO;
 
 /**
  * Mapper manuel pour la conversion entre l'entité Contrat/Paiement et leurs DTOs.
@@ -24,13 +26,38 @@ public class ContratMapper {
      * avec initialisation des paiements en cascade.
      */
     public static Contrat toEntity(ContratRequest request) {
-        Contrat contrat = new Contrat();
-        contrat.setDateSignature(request.getDateSignature());
-        contrat.setMontantTotal(request.getMontantTotal());
-        contrat.setValide(request.isValide());
+        return buildContrat(
+                request.getDateSignature(),
+                request.getMontantTotal(),
+                request.isValide(),
+                request.getPaiements()
+        );
+    }
 
-        if (request.getPaiements() != null) {
-            List<Paiement> paiements = request.getPaiements().stream()
+    /**
+     * Convertit un ReservationWithContratRequestDTO en entité Contrat.
+     */
+    public static Contrat toEntity(ReservationWithContratRequestDTO request) {
+        return buildContrat(
+                request.getDateSignature(),
+                request.getMontantTotal(),
+                request.isValide(),
+                request.getPaiements()
+        );
+    }
+
+    private static Contrat buildContrat(
+            java.time.LocalDate dateSignature,
+            java.math.BigDecimal montantTotal,
+            boolean valide,
+            List<PaiementRequest> paiementsRequest) {
+        Contrat contrat = new Contrat();
+        contrat.setDateSignature(dateSignature);
+        contrat.setMontantTotal(montantTotal);
+        contrat.setValide(valide);
+
+        if (paiementsRequest != null) {
+            List<Paiement> paiements = paiementsRequest.stream()
                     .map(req -> paiementToEntity(req, contrat))
                     .collect(Collectors.toList());
             contrat.getPaiements().addAll(paiements);
@@ -42,19 +69,39 @@ public class ContratMapper {
      * Convertit une entité Contrat en ContratResponse (avec ses paiements).
      */
     public static ContratResponse toResponse(Contrat contrat) {
-        List<PaiementResponse> paiementsDto = contrat.getPaiements() != null
-                ? contrat.getPaiements().stream()
-                        .map(ContratMapper::paiementToResponse)
-                        .collect(Collectors.toList())
-                : List.of();
-
         return new ContratResponse(
                 contrat.getIdContrat(),
                 contrat.getDateSignature(),
                 contrat.getMontantTotal(),
                 contrat.isValide(),
-                paiementsDto
+                mapPaiements(contrat)
         );
+    }
+
+    /**
+     * Convertit une entité Contrat en ContratDTO (avec réservation liée et paiements).
+     */
+    public static ContratDTO toDTO(Contrat contrat) {
+        Long reservationId = contrat.getReservation() != null
+                ? contrat.getReservation().getIdReservation()
+                : null;
+
+        return new ContratDTO(
+                contrat.getIdContrat(),
+                contrat.getDateSignature(),
+                contrat.getMontantTotal(),
+                contrat.isValide(),
+                reservationId,
+                mapPaiements(contrat)
+        );
+    }
+
+    private static List<PaiementResponse> mapPaiements(Contrat contrat) {
+        return contrat.getPaiements() != null
+                ? contrat.getPaiements().stream()
+                        .map(ContratMapper::paiementToResponse)
+                        .collect(Collectors.toList())
+                : List.of();
     }
 
     // ----------------------------------------------------------- Paiements

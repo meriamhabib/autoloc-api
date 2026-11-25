@@ -16,9 +16,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import tn.esprit.autoloc.service.IVehiculeService;
+import tn.esprit.autoloc.web.dto.VehiculeDTO;
 import tn.esprit.autoloc.web.dto.VehiculeRequest;
 import tn.esprit.autoloc.web.dto.VehiculeResponse;
 
@@ -80,5 +82,30 @@ public class VehiculeController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteById(@Parameter(description = "Identifiant du véhicule") @PathVariable Long id) {
         vehiculeService.deleteById(id);
+    }
+
+    @Operation(summary = "Affecter un équipement à un véhicule")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Équipement affecté au véhicule avec succès"),
+            @ApiResponse(responseCode = "404", description = "Véhicule ou équipement introuvable")
+    })
+    @PutMapping("/{idVehicule}/equipements/{idEquipement}")
+    public VehiculeDTO affecterVehiculeAEquipement(
+            @Parameter(description = "Identifiant du véhicule") @PathVariable Long idVehicule,
+            @Parameter(description = "Identifiant de l'équipement") @PathVariable Long idEquipement) {
+        return vehiculeService.affecterVehiculeAEquipement(idVehicule, idEquipement);
+    }
+
+    @Operation(summary = "Affecter une maintenance à un véhicule par description et immatriculation")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Maintenance affectée au véhicule avec succès"),
+            @ApiResponse(responseCode = "400", description = "Paramètres invalides"),
+            @ApiResponse(responseCode = "404", description = "Maintenance ou véhicule introuvable")
+    })
+    @PutMapping("/affecter-maintenance")
+    public VehiculeDTO affecterMaintenanceAvehicule(
+            @Parameter(description = "Description de la maintenance") @RequestParam String description,
+            @Parameter(description = "Immatriculation du véhicule") @RequestParam String immatriculation) {
+        return vehiculeService.affecterMaintenanceAvehicule(description, immatriculation);
     }
 }

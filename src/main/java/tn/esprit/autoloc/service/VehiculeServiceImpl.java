@@ -6,13 +6,17 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tn.esprit.autoloc.domain.Agence;
 import tn.esprit.autoloc.domain.Equipement;
+import tn.esprit.autoloc.domain.Maintenance;
 import tn.esprit.autoloc.domain.Vehicule;
 import tn.esprit.autoloc.exception.ResourceNotFoundException;
 import tn.esprit.autoloc.repository.IAgenceRepository;
 import tn.esprit.autoloc.repository.IEquipementRepository;
+import tn.esprit.autoloc.repository.IMaintenanceRepository;
 import tn.esprit.autoloc.repository.IVehiculeRepository;
+import tn.esprit.autoloc.web.dto.VehiculeDTO;
 import tn.esprit.autoloc.web.dto.VehiculeRequest;
 import tn.esprit.autoloc.web.dto.VehiculeResponse;
 import tn.esprit.autoloc.web.mapper.VehiculeMapper;
@@ -24,6 +28,7 @@ public class VehiculeServiceImpl implements IVehiculeService {
     private final IVehiculeRepository vehiculeRepository;
     private final IAgenceRepository agenceRepository;
     private final IEquipementRepository equipementRepository;
+    private final IMaintenanceRepository maintenanceRepository;
 
     @Override
     public VehiculeResponse create(VehiculeRequest request) {
@@ -70,6 +75,63 @@ public class VehiculeServiceImpl implements IVehiculeService {
             throw new ResourceNotFoundException("Vehicule", id);
         }
         vehiculeRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional
+    public VehiculeDTO affecterVehiculeAEquipement(Long idVehicule, Long idEquipement) {
+        Vehicule vehicule = vehiculeRepository.findById(idVehicule)
+                .orElseThrow(() -> new ResourceNotFoundException("Vehicule", idVehicule));
+        Equipement equipement = equipementRepository.findById(idEquipement)
+                .orElseThrow(() -> new ResourceNotFoundException("Equipement", idEquipement));
+
+        if (vehicule.getEquipements() == null) {
+            vehicule.setEquipements(new ArrayList<>());
+        }
+        if (!vehicule.getEquipements().contains(equipement)) {
+            vehicule.getEquipements().add(equipement);
+        }
+
+        if (equipement.getVehicules() == null) {
+            equipement.setVehicules(new ArrayList<>());
+        }
+        if (!equipement.getVehicules().contains(vehicule)) {
+            equipement.getVehicules().add(vehicule);
+        }
+
+        return VehiculeMapper.toDTO(vehiculeRepository.save(vehicule));
+    }
+
+    @Override
+    @Transactional
+    public VehiculeDTO affecterMaintenanceAvehicule(String description, String immatriculation) {
+        if (description == null || description.trim().isEmpty()
+                || immatriculation == null || immatriculation.trim().isEmpty()) {
+            throw new IllegalArgumentException("La description de la maintenance et l'immatriculation sont obligatoires");
+        }
+
+        Maintenance maintenance = maintenanceRepository.findFirstByDescriptionIgnoreCase(description.trim())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Maintenance introuvable avec la description '" + description + "'"));
+        Vehicule vehicule = vehiculeRepository.findByImmatriculationIgnoreCase(immatriculation.trim())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Véhicule introuvable avec l'immatriculation '" + immatriculation + "'"));
+
+        Vehicule ancienVehicule = maintenance.getVehicule();
+        if (ancienVehicule != null && !ancienVehicule.equals(vehicule) && ancienVehicule.getMaintenances() != null) {
+            ancienVehicule.getMaintenances().remove(maintenance);
+        }
+
+        maintenance.setVehicule(vehicule);
+        if (vehicule.getMaintenances() == null) {
+            vehicule.setMaintenances(new ArrayList<>());
+        }
+        if (!vehicule.getMaintenances().contains(maintenance)) {
+            vehicule.getMaintenances().add(maintenance);
+        }
+
+        maintenanceRepository.save(maintenance);
+        return VehiculeMapper.toDTO(vehicule);
     }
 
     private void lierAgenceEtEquipements(Vehicule vehicule, VehiculeRequest request) {
